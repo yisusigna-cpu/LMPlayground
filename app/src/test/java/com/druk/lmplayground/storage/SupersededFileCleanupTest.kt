@@ -38,6 +38,14 @@ class SupersededFileCleanupTest {
     }
 
     @Test
+    fun qwen35Q3IsRetiredOnceIq4xsArrives() {
+        val q3 = "Qwen_Qwen3.5-2B-Q3_K_M.gguf"
+        val iq4 = "Qwen_Qwen3.5-2B-IQ4_XS.gguf"
+        assertEquals(listOf(q3), SupersededFileCleanup.selectDeletable(setOf(q3, iq4)))
+        assertTrue(SupersededFileCleanup.selectDeletable(setOf(q3)).isEmpty())
+    }
+
+    @Test
     fun everySupersededEntryPointsAtACatalogFile() {
         val known = com.druk.lmplayground.models.ModelInfoProvider.knownFilenames
         SupersededFileCleanup.supersededFilenames().forEach { retired ->
