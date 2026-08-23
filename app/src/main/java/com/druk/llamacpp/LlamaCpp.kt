@@ -28,8 +28,11 @@ class LlamaCpp(private val client: InferenceClient) {
         path: String,
         progressCallback: LlamaProgressCallback,
         disableRepack: Boolean = false,
+        chatTemplateOverride: String? = null,
     ): LlamaModel {
-        val id = client.withService { it.loadModel(path, null, wrapProgress(progressCallback), disableRepack) }
+        val id = client.withService {
+            it.loadModel(path, null, wrapProgress(progressCallback), disableRepack, chatTemplateOverride)
+        }
         if (id == 0) throw IllegalStateException("loadModel failed for $path")
         return LlamaModel(client, id)
     }
@@ -43,8 +46,11 @@ class LlamaCpp(private val client: InferenceClient) {
         pfd: ParcelFileDescriptor,
         progressCallback: LlamaProgressCallback,
         disableRepack: Boolean = false,
+        chatTemplateOverride: String? = null,
     ): LlamaModel {
-        val id = client.withService { it.loadModel(null, pfd, wrapProgress(progressCallback), disableRepack) }
+        val id = client.withService {
+            it.loadModel(null, pfd, wrapProgress(progressCallback), disableRepack, chatTemplateOverride)
+        }
         if (id == 0) throw IllegalStateException("loadModel failed for pfd")
         return LlamaModel(client, id)
     }

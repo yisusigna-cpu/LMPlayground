@@ -16,6 +16,7 @@ import com.druk.lmplayground.conversation.GenerationParams
 import com.druk.lmplayground.conversation.HistoryReplay
 import com.druk.lmplayground.conversation.InferenceNotificationUpdater
 import com.druk.lmplayground.conversation.Message
+import com.druk.lmplayground.models.ChatTemplateOverrides
 import com.druk.lmplayground.models.ModelInfo
 import com.druk.lmplayground.storage.StoragePreferences
 import com.druk.lmplayground.storage.StorageRepository
@@ -235,6 +236,9 @@ class ModelRuntime(
                         }
                     },
                     disableRepack = disableRepack,
+                    // Non-null only for models whose published template is
+                    // known-broken; see ChatTemplateOverrides.
+                    chatTemplateOverride = ChatTemplateOverrides.forModel(app, model.filename),
                 )
 
                 // Load mmproj for vision models. The mtmd loader needs a

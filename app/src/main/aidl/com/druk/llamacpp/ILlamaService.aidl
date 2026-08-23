@@ -44,7 +44,8 @@ interface ILlamaService {
     int loadModel(in @nullable String path,
                   in @nullable ParcelFileDescriptor pfd,
                   ILlamaProgressCallback progress,
-                  boolean disableRepack);
+                  boolean disableRepack,
+                  in @nullable String chatTemplateOverride);
 
     long getModelSize(int modelId);
     String getModelReport(int modelId);
