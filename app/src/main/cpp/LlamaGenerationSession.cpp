@@ -2,7 +2,9 @@
 // Created by Andrew Druk on 22.01.2024.
 //
 
+#if defined(__ANDROID__)
 #include <jni.h>
+#endif
 #include <string>
 
 #include "LlamaCpp.h"
@@ -31,13 +33,15 @@
 #include <mutex>
 
 #include <unistd.h>
-#include <android/log.h>
+#if defined(__ANDROID__)
+// Linux kernel UAPI header; absent on macOS. <fcntl.h> below already
+// provides everything this file uses.
 #include <asm-generic/fcntl.h>
+#endif
 #include <fcntl.h>
 
-#define TAG "llama-android.cpp"
-#define LOGi(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
-#define LOGe(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
+#define LMP_LOG_TAG "llama-android.cpp"
+#include "lmp_log.h"
 
 bool is_valid_utf8(const char * string) {
     if (!string) {

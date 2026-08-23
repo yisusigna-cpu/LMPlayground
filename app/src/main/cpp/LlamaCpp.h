@@ -253,11 +253,16 @@ public:
 
     LlamaEmbeddingSession* createEmbeddingSession(int nCtx);
     int getContextTrainSize();
+    // chatTemplateOverride: when non-empty, replaces the GGUF's embedded
+    // chat template. Used for models whose published template is defective
+    // (e.g. SmolLM3 never renders message.tool_calls, so llama.cpp cannot
+    // derive a tool-call grammar and tool calls leak to the UI as raw text).
     void loadModel(const std::string &modelPath,
                    int32_t n_gpu_layers,
                    llama_progress_callback progress_callback,
                    void* progress_callback_user_data,
-                   bool disableRepack = false);
+                   bool disableRepack = false,
+                   const std::string &chatTemplateOverride = "");
 
     void loadMmprojModel(const std::string &mmprojPath);
 

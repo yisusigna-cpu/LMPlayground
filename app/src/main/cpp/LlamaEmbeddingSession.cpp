@@ -1,4 +1,6 @@
+#if defined(__ANDROID__)
 #include <jni.h>
+#endif
 #include <string>
 #include <vector>
 
@@ -10,11 +12,8 @@
 #include <algorithm>
 #include <unistd.h>
 
-#include <android/log.h>
-
-#define TAG "LlamaEmbeddingSession"
-#define LOGi(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
-#define LOGe(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
+#define LMP_LOG_TAG "LlamaEmbeddingSession"
+#include "lmp_log.h"
 
 LlamaEmbeddingSession::~LlamaEmbeddingSession() {
     if (ctx != nullptr) {

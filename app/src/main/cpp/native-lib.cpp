@@ -16,7 +16,9 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#if defined(__ANDROID__)
 #include <sys/system_properties.h>
+#endif
 #include <ctime>
 #include <fstream>
 #include <iostream>
@@ -26,8 +28,11 @@
 #include <iostream>
 #include <csignal>
 #include <unistd.h>
-#include <android/log.h>
 
+#define LMP_LOG_TAG "llama-android.cpp"
+#include "lmp_log.h"
+
+#if defined(__ANDROID__)
 class AndroidLogBuf : public std::streambuf {
 protected:
     std::streamsize xsputn(const char* s, std::streamsize n) override {
@@ -43,14 +48,21 @@ protected:
         return c;
     }
 };
+#endif
 
-#define TAG "llama-android.cpp"
+#define TAG LMP_LOG_TAG
 static void log_callback(ggml_log_level level, const char * fmt, void * data) {
     // fmt is already formatted by llama.cpp — use %s to avoid interpreting % in the message
+#if defined(__ANDROID__)
     if (level == GGML_LOG_LEVEL_ERROR)     __android_log_print(ANDROID_LOG_ERROR, TAG, "%s", fmt);
     else if (level == GGML_LOG_LEVEL_INFO) __android_log_print(ANDROID_LOG_INFO, TAG, "%s", fmt);
     else if (level == GGML_LOG_LEVEL_WARN) __android_log_print(ANDROID_LOG_WARN, TAG, "%s", fmt);
     else __android_log_print(ANDROID_LOG_DEFAULT, TAG, "%s", fmt);
+#else
+    if (level == GGML_LOG_LEVEL_ERROR)     LOGe("%s", fmt);
+    else if (level == GGML_LOG_LEVEL_WARN) LOGw("%s", fmt);
+    else                                   LOGi("%s", fmt);
+#endif
 }
 
 extern "C"
@@ -98,6 +110,7 @@ Java_com_druk_llamacpp_jni_NativeLlamaCpp_probeModelMetadata(JNIEnv *env, jobjec
 // 920) — each costing every affected user one startup crash. Only families
 // with zero vision crashes across three releases of Vitals stay on Vulkan; the
 // crash sentinel below still catches an allowlisted part that misbehaves.
+#if defined(__ANDROID__)
 static bool clipVulkanIsKnownGood(const char *gpuDescription) {
     if (gpuDescription == nullptr) return false;
     static const char *kAllow[] = {
@@ -117,6 +130,7 @@ static bool clipVulkanIsKnownGood(const char *gpuDescription) {
     }
     return false;
 }
+#endif // __ANDROID__
 
 // --- Vulkan CLIP crash sentinel ---------------------------------------------
 // Catches GPUs not on the static denylist after a single crash. The inflight
@@ -146,10 +160,10 @@ void clipSentinelInit(const std::string &stateDir) {
     if (fileExists(clipInflightPath())) {
         touchFile(clipBlockedPath());
         remove(clipInflightPath().c_str());
-        __android_log_print(ANDROID_LOG_WARN, TAG,
-            "previous Vulkan CLIP attempt crashed; disabling Vulkan vision");
+        LOGw("previous Vulkan CLIP attempt crashed; disabling Vulkan vision");
     }
 }
+
 bool clipSentinelVulkanBlocked() {
     return !g_clipStateDir.empty() && fileExists(clipBlockedPath());
 }
@@ -170,9 +184,11 @@ Java_com_druk_llamacpp_jni_NativeLlamaCpp_init(JNIEnv *env, jobject object, jstr
         env->ReleaseStringUTFChars(stateDir, sd);
     }
 
+#if defined(__ANDROID__)
     // Redirect std::cerr to logcat
     AndroidLogBuf androidLogBuf;
     std::cerr.rdbuf(&androidLogBuf);
+#endif
 
     llama_log_set(log_callback, NULL);
     ggml_log_set(log_callback, NULL);
@@ -185,11 +201,18 @@ Java_com_druk_llamacpp_jni_NativeLlamaCpp_init(JNIEnv *env, jobject object, jstr
     // libggml-*.so files alongside libllamacpp.so. dlopen them so
     // llama_model_load_from_file (and the mtmd vision encoder) have backends
     // to bind tensors to.
+    bool backends_loaded = false;
     if (nativeLibDir != nullptr) {
         const char *path = env->GetStringUTFChars(nativeLibDir, nullptr);
-        ggml_backend_load_all_from_path(path);
-        env->ReleaseStringUTFChars(nativeLibDir, path);
-    } else {
+        if (path != nullptr) {
+            if (path[0] != '\0') {
+                ggml_backend_load_all_from_path(path);
+                backends_loaded = true;
+            }
+            env->ReleaseStringUTFChars(nativeLibDir, path);
+        }
+    }
+    if (!backends_loaded) {
         ggml_backend_load_all();
     }
 
@@ -211,13 +234,14 @@ Java_com_druk_llamacpp_jni_NativeLlamaCpp_init(JNIEnv *env, jobject object, jstr
         enum ggml_backend_dev_type type = ggml_backend_dev_type(dev);
         const char *name = ggml_backend_dev_name(dev);
         const char *desc = ggml_backend_dev_description(dev);
-        __android_log_print(ANDROID_LOG_INFO, TAG, "ggml device %zu: name=%s type=%d desc=%s",
-                            i, name ? name : "?", (int) type, desc ? desc : "?");
+        LOGi("ggml device %zu: name=%s type=%d desc=%s",
+             i, name ? name : "?", (int) type, desc ? desc : "?");
         if (type == GGML_BACKEND_DEVICE_TYPE_GPU || type == GGML_BACKEND_DEVICE_TYPE_IGPU) {
             gpu_name = name;
             gpu_desc = desc;
         }
     }
+#if defined(__ANDROID__)
     if (gpu_name != nullptr && clipVulkanIsKnownGood(gpu_desc)
             && !clipSentinelVulkanBlocked()) {
         mtmd_backend = gpu_name;
@@ -226,9 +250,19 @@ Java_com_druk_llamacpp_jni_NativeLlamaCpp_init(JNIEnv *env, jobject object, jstr
     if (__system_property_get("debug.lmp.mtmd_backend", backend_override) > 0) {
         mtmd_backend = backend_override;
     }
+#else
+    // Host: the GPU here is Metal, which is exactly the CLIP backend we want,
+    // so no per-driver allowlist is needed. LMP_MTMD_BACKEND=CPU to override.
+    if (gpu_name != nullptr) {
+        mtmd_backend = gpu_name;
+    }
+    if (const char * backend_override = std::getenv("LMP_MTMD_BACKEND")) {
+        mtmd_backend = backend_override;
+    }
+#endif
     setenv("MTMD_BACKEND_DEVICE", mtmd_backend, 1);
-    __android_log_print(ANDROID_LOG_INFO, TAG, "vision backend: %s (gpu=%s)",
-                        mtmd_backend, gpu_desc ? gpu_desc : "none");
+    LOGi("vision backend: %s (gpu=%s)",
+         mtmd_backend, gpu_desc ? gpu_desc : "none");
 
     llama_backend_init();
     return 0;
@@ -246,7 +280,8 @@ Java_com_druk_llamacpp_jni_NativeLlamaCpp_loadModel(JNIEnv *env,
                    jobject activity,
                    jstring modelPath,
                    jobject progressCallback,
-                   jboolean disableRepack) {
+                   jboolean disableRepack,
+                   jstring chatTemplateOverride) {
 
     // Stack-allocated and passed as a raw pointer into the progress
     // callback: safe only because loadModel invokes the callback
@@ -261,6 +296,14 @@ Java_com_druk_llamacpp_jni_NativeLlamaCpp_loadModel(JNIEnv *env,
     auto model = std::make_unique<LlamaModel>();
     CallbackContext ctx = {env, progressCallback};
     const char* utfModelPath = env->GetStringUTFChars(modelPath, nullptr);
+    std::string templateOverride;
+    if (chatTemplateOverride != nullptr) {
+        const char *tpl = env->GetStringUTFChars(chatTemplateOverride, nullptr);
+        if (tpl != nullptr) {
+            templateOverride.assign(tpl);
+            env->ReleaseStringUTFChars(chatTemplateOverride, tpl);
+        }
+    }
     model->loadModel(utfModelPath,
                      -1,
                      [](float progress, void *ctx) -> bool {
@@ -271,7 +314,8 @@ Java_com_druk_llamacpp_jni_NativeLlamaCpp_loadModel(JNIEnv *env,
                             return true;
                      },
                      &ctx,
-                     disableRepack == JNI_TRUE
+                     disableRepack == JNI_TRUE,
+                     templateOverride
                      );
     env->ReleaseStringUTFChars(modelPath, utfModelPath);
 
@@ -757,6 +801,6 @@ extern "C" JNIEXPORT void JNICALL Java_com_druk_llamacpp_jni_NativeLlamaSession_
     if (session != nullptr) {
         env->SetLongField(obj, fid, (long)nullptr);
         delete session;
-        __android_log_print(ANDROID_LOG_DEBUG, "Llama", "Destroy");
+        LMP_LOGT(ANDROID_LOG_DEBUG, "Llama", "Destroy");
     }
 }

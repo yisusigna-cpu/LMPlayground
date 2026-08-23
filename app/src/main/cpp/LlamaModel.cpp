@@ -2,7 +2,9 @@
 // Created by Andrew Druk on 24.01.2024.
 //
 
+#if defined(__ANDROID__)
 #include <jni.h>
+#endif
 #include <string>
 
 #include "LlamaCpp.h"
@@ -31,18 +33,17 @@
 
 #include <csignal>
 #include <unistd.h>
-#include <android/log.h>
 #include <fcntl.h>
 
-#define TAG "llama-android.cpp"
-#define LOGi(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
-#define LOGe(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
+#define LMP_LOG_TAG "llama-android.cpp"
+#include "lmp_log.h"
 
 void LlamaModel::loadModel(const std::string &modelPath,
                            int32_t n_gpu_layers,
                            llama_progress_callback progress_callback,
                            void * progress_callback_user_data,
-                           bool disableRepack) {
+                           bool disableRepack,
+                           const std::string &chatTemplateOverride) {
 
     // initialize the model
     llama_model_params model_params = llama_model_default_params();
@@ -56,12 +57,25 @@ void LlamaModel::loadModel(const std::string &modelPath,
     // CPU-only device list removes Vulkan from the text graph entirely. The
     // mtmd CLIP context selects Vulkan0 independently (MTMD_BACKEND_DEVICE),
     // so vision encoding still runs on the GPU.
+#if defined(__ANDROID__)
     model_params.n_gpu_layers = 0;
     static ggml_backend_dev_t cpu_only_devices[2] = { nullptr, nullptr };
     cpu_only_devices[0] = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
     if (cpu_only_devices[0] != nullptr) {
         model_params.devices = cpu_only_devices;
     }
+#else
+    // Host build (:model-harness on macOS): none of the above applies —
+    // there is no Mali/Adreno Vulkan driver to route around, and Metal is
+    // both correct and much faster. Honour the caller's n_gpu_layers (the
+    // JNI layer passes -1 = offload everything); LMP_HOST_N_GPU_LAYERS=0
+    // forces a CPU-only run for Android-numerics comparisons.
+    int32_t host_n_gpu_layers = n_gpu_layers;
+    if (const char * ngl_override = std::getenv("LMP_HOST_N_GPU_LAYERS")) {
+        host_n_gpu_layers = atoi(ngl_override);
+    }
+    model_params.n_gpu_layers = host_n_gpu_layers;
+#endif
     model_params.progress_callback = progress_callback;
     model_params.progress_callback_user_data = progress_callback_user_data;
     // Weight repacking (the CPU "extra" buffer types) copies quantized
@@ -75,7 +89,12 @@ void LlamaModel::loadModel(const std::string &modelPath,
         LOG_ERR("%s: failed to load model '%s'\n", __func__, modelPath.c_str());
         return;
     }
-    chat_tmpls = common_chat_templates_init(model, "");
+    // An override wins outright: common_chat_templates_init only reads the
+    // GGUF's embedded template when this string is empty.
+    if (!chatTemplateOverride.empty()) {
+        LOGi("using chat template override (%zu bytes)", chatTemplateOverride.size());
+    }
+    chat_tmpls = common_chat_templates_init(model, chatTemplateOverride);
 }
 
 void LlamaModel::loadMmprojModel(const std::string &mmprojPath) {
@@ -90,6 +109,12 @@ void LlamaModel::loadMmprojModel(const std::string &mmprojPath) {
     params.print_timings = true;
     // Use model defaults for image tokens (-1). Some models like Gemma 4
     // have high minimum pixel requirements that reject low token caps.
+    // LMP_IMAGE_MAX_TOKENS overrides it for measurement: CLIP encode time
+    // scales with image tokens, and that encode is what users perceive as a
+    // hang on CPU-only devices. Never set in production.
+    if (const char *max_tok = std::getenv("LMP_IMAGE_MAX_TOKENS")) {
+        params.image_max_tokens = atoi(max_tok);
+    }
 
     LOGi("loadMmprojModel: loading %s (use_gpu=%d, n_threads=%d, image_max_tokens=%d)",
          mmprojPath.c_str(), params.use_gpu, params.n_threads, params.image_max_tokens);
