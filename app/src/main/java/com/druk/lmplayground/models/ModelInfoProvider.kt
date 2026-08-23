@@ -464,6 +464,11 @@ object ModelInfoProvider {
     // cached and override these (see ModelInfo.resolveCapabilities). A wrong flag
     // here only mis-paints a list badge \u2014 it never affects whether tools actually
     // run, which is gated separately on the loaded model's real capability.
+    //
+    // Checked against every catalog GGUF's embedded template (jinja::caps).
+    // Llama 3.2 1B, Phi-4 mini and Mistral 7B were listed here but their
+    // templates report supports_tools=false, so the badge promised a
+    // capability the engine would never enable \u2014 removed.
     private val TOOL_CAPABLE = setOf(
         "Qwen3-0.6B-Q4_K_M.gguf",
         "Qwen3-1.7B-Q4_K_M.gguf",
@@ -471,9 +476,7 @@ object ModelInfoProvider {
         "Qwen_Qwen3.5-0.8B-Q3_K_M.gguf",
         "Qwen_Qwen3.5-2B-Q3_K_M.gguf",
         "Qwen_Qwen3.5-4B-Q3_K_M.gguf",
-        "Llama-3.2-1B-Instruct-Q4_K_M.gguf",
         "Llama-3.2-3B-Instruct-Q4_K_M.gguf",
-        "Phi-4-mini-instruct-Q4_K_M.gguf",
         "LFM2.5-350M-Q4_K_M.gguf",
         "LFM2.5-1.2B-Thinking-Q4_K_M.gguf",
         "LFM2.5-2.6B-Q4_K_M.gguf",
@@ -496,7 +499,6 @@ object ModelInfoProvider {
         "gemma-4-12B-it-Q4_K_M.gguf",
         "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
         "Qwen2.5-1.5B-Instruct-Q4_K_M.gguf",
-        "Mistral-7B-Instruct-v0.3-Q4_K_M.gguf",
         "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
         "gpt-oss-20b-mxfp4.gguf",
     )

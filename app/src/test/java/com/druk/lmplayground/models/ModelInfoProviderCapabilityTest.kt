@@ -49,7 +49,7 @@ class ModelInfoProviderCapabilityTest {
 
     @Test
     fun toolOnlyModelsSupportToolsNotThinking() {
-        listOf("Llama 3.2 1B", "Phi-4 mini", "Granite 4.0 Micro", "Qwen2.5 0.5B").forEach { name ->
+        listOf("Granite 4.0 Micro", "Qwen2.5 0.5B").forEach { name ->
             val model = byName(name)
             assertTrue("$name should support tools", model.supportsTools)
             assertFalse("$name should not support thinking", model.supportsThinking)
@@ -62,6 +62,19 @@ class ModelInfoProviderCapabilityTest {
             val model = byName(name)
             assertTrue("$name should support tools", model.supportsTools)
             assertTrue("$name should support thinking", model.supportsThinking)
+        }
+    }
+
+    /**
+     * These three were flagged TOOL_CAPABLE, but their GGUF chat templates
+     * report supports_tools=false, so the engine never enables tools for them
+     * (the badge promised something the runtime would not do). Verified against
+     * the shipped GGUFs' embedded templates by :model-harness.
+     */
+    @Test
+    fun modelsWithoutTemplateToolSupportAreNotBadged() {
+        listOf("Llama 3.2 1B", "Phi-4 mini", "Mistral 7B").forEach { name ->
+            assertFalse("$name should not be badged as tool-capable", byName(name).supportsTools)
         }
     }
 
