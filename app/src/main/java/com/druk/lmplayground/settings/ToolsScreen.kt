@@ -36,7 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.druk.lmplayground.R
-import com.druk.lmplayground.tools.Tool
+import com.druk.llamacpp.tools.Tool
 
 /**
  * User-facing copy for a tool, keyed by [Tool.name]. The runtime

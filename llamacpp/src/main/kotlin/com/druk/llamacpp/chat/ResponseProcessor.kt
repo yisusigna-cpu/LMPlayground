@@ -1,4 +1,4 @@
-package com.druk.lmplayground.conversation
+package com.druk.llamacpp.chat
 
 /**
  * Processes raw model response text for display in the UI.

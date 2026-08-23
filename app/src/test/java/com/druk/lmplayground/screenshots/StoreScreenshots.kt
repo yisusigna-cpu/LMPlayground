@@ -97,7 +97,7 @@ import com.druk.lmplayground.models.Model
 import com.druk.lmplayground.models.ModelWithStatus
 import com.druk.lmplayground.settings.ToolsContent
 import com.druk.lmplayground.theme.PlaygroundTheme
-import com.druk.lmplayground.tools.Tool
+import com.druk.llamacpp.tools.Tool
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

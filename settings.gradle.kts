@@ -24,4 +24,6 @@ dependencyResolutionManagement {
 }
 rootProject.name = "LMPlayground"
 include(":app")
+include(":llamacpp")
+include(":model-harness")
 

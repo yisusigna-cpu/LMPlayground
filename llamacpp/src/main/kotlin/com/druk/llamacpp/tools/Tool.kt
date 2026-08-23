@@ -1,4 +1,4 @@
-package com.druk.lmplayground.tools
+package com.druk.llamacpp.tools
 
 interface Tool {
     val name: String

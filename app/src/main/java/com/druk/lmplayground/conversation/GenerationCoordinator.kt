@@ -1,5 +1,8 @@
 package com.druk.lmplayground.conversation
 
+import com.druk.llamacpp.chat.ResponseProcessor
+import com.druk.llamacpp.chat.ToolCallRecord
+import com.druk.llamacpp.chat.ToolCallLoop
 import android.app.Application
 import android.util.Log
 import com.druk.llamacpp.InferenceUnavailableException
@@ -8,7 +11,7 @@ import com.druk.lmplayground.App
 import com.druk.lmplayground.R
 import com.druk.lmplayground.inference.ModelRuntime
 import com.druk.lmplayground.storage.StoragePreferences
-import com.druk.lmplayground.tools.ToolRegistry
+import com.druk.llamacpp.tools.ToolRegistry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -261,75 +264,64 @@ class GenerationCoordinator(
             notifications.tokensLine(0),
         )
         try {
-            var toolRounds = 0
-            val maxToolRounds = 5
-            while (true) {
-                val rc = llamaSession.generateAll(callback)
-                if (rc != 2 || toolRounds >= maxToolRounds || !this.isActive) {
-                    break
-                }
-                toolRounds++
-
-                val toolCallsJson = llamaSession.getToolCallsJson()
-                Log.d(TAG, "Tool calls (round $toolRounds): $toolCallsJson")
-
-                val toolStartTime = System.currentTimeMillis()
-                // Run the (blocking) tool execution on IO and await it so
-                // Stop can interrupt it: on cancel we abort in-flight
-                // network requests, which unblocks the call promptly.
-                val toolResults = withContext(Dispatchers.IO) {
-                    val exec = async { toolRegistry.executeToolCalls(toolCallsJson) }
-                    try {
-                        exec.await()
-                    } catch (e: CancellationException) {
-                        toolRegistry.cancelInFlight()
-                        throw e
+            // The loop itself lives in :llamacpp (ToolCallLoop) so the
+            // macOS harness drives the exact same code — including the
+            // forced-thinking rule below, which is where the Gemma-family
+            // empty-reply bug lived. Everything Android-specific (UI token
+            // counters, the thinking timer) stays here in the observer.
+            ToolCallLoop(
+                session = llamaSession,
+                tools = object : ToolCallLoop.ToolExecutor {
+                    override fun executeToolCalls(toolCallsJson: String): String {
+                        Log.d(TAG, "Tool calls: $toolCallsJson")
+                        return toolRegistry.executeToolCalls(toolCallsJson)
                     }
-                }
-                val toolDurationMs = System.currentTimeMillis() - toolStartTime
-                Log.d(TAG, "Tool results (${toolDurationMs}ms): $toolResults")
+                    override fun cancelInFlight() = toolRegistry.cancelInFlight()
+                },
+                observer = object : ToolCallLoop.Observer {
+                    override fun onToolCalls(calls: List<ToolCallRecord>) {
+                        listener.onToolCalls(
+                            calls.map {
+                                ToolCallInfo(
+                                    name = it.name,
+                                    arguments = it.arguments,
+                                    result = it.result,
+                                    durationMs = it.durationMs,
+                                )
+                            }
+                        )
+                    }
 
-                val toolCallInfoList = ToolCallInfoMapper.buildToolCallInfoList(
-                    toolCallsJson, toolResults, toolDurationMs,
-                )
-                listener.onToolCalls(toolCallInfoList)
+                    override fun onRoundStarted(round: Int, responseThinking: Boolean) {
+                        // Reset the streaming callback's per-round counters so
+                        // the next generateAll() reports a fresh
+                        // thinking-vs-response token split. The callback tracks
+                        // WHICH phase the model is in for THIS round, so it
+                        // follows responseThinking (the just-submitted flag) —
+                        // not the user toggle — so the UI shows the thinking
+                        // indicator while we wait for the answer.
+                        callback.totalTokens = 0
+                        callback.thinkingTokenCount = 0
+                        callback.thinkingComplete = !responseThinking
+                        callback.modelIsThinking = responseThinking
 
-                // Force thinking on for the response phase if the
-                // model supports it, regardless of the user toggle.
-                // Gemma 4 and harmony-style models emit an empty
-                // content channel after tool calls when thinking is
-                // off — the chat would otherwise show a blank
-                // assistant bubble after every tool call. Reasoning
-                // still routes to the collapsed thinking section via
-                // the always-on DEEPSEEK extraction in the parser,
-                // so visible content stays clean. For models without
-                // a thinking mode this is a no-op (the flag is
-                // silently ignored). See testReproduceAppBehavior
-                // for the canonical repro.
-                val responseThinking = supportsThinking || enableThinking
-                llamaSession.submitToolResults(toolResults, responseThinking)
-
-                // Reset the streaming callback's per-round counters
-                // so the next generateAll() reports a fresh
-                // thinking-vs-response token split. The callback
-                // tracks WHICH phase the model is in for THIS round,
-                // so it follows responseThinking (the just-submitted
-                // flag) — not the user toggle — so the UI shows the
-                // thinking indicator while we wait for the answer.
-                callback.totalTokens = 0
-                callback.thinkingTokenCount = 0
-                callback.thinkingComplete = !responseThinking
-                callback.modelIsThinking = responseThinking
-
-                // Restart the thinking timer for the post-tool phase:
-                // the tool-call attach reset thinkingStartTimeMs to 0,
-                // and the callback's modelIsThinking is pre-set true so the
-                // streaming path won't fire markThinkingStarted itself —
-                // without this the post-tool "Thinking" duration stays 0s.
-                if (responseThinking) {
-                    listener.onThinkingRestarted()
-                }
-            }
+                        // Restart the thinking timer for the post-tool phase:
+                        // the tool-call attach reset thinkingStartTimeMs to 0,
+                        // and the callback's modelIsThinking is pre-set true so
+                        // the streaming path won't fire markThinkingStarted
+                        // itself — without this the post-tool "Thinking"
+                        // duration stays 0s.
+                        if (responseThinking) {
+                            listener.onThinkingRestarted()
+                        }
+                    }
+                },
+            ).run(
+                callback = callback,
+                supportsThinking = supportsThinking,
+                enableThinking = enableThinking,
+                isActive = { this.isActive },
+            )
         } catch (e: InferenceUnavailableException) {
             Log.w(TAG, "generateAll failed: service unavailable", e)
             listener.onUserError(

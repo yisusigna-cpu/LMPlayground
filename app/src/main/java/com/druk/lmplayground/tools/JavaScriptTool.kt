@@ -1,5 +1,6 @@
 package com.druk.lmplayground.tools
 
+import com.druk.llamacpp.tools.Tool
 import android.content.Context
 import androidx.javascriptengine.IsolateStartupParameters
 import androidx.javascriptengine.JavaScriptSandbox

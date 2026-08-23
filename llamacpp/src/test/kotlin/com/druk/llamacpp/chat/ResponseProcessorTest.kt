@@ -1,4 +1,4 @@
-package com.druk.lmplayground.conversation
+package com.druk.llamacpp.chat
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

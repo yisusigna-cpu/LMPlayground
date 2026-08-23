@@ -18,8 +18,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 class LlamaGenerationSession internal constructor(
     private val client: InferenceClient,
     internal val sessionId: Int,
-) {
-    fun addMessage(message: String, enableThinking: Boolean) {
+) : GenerationSession {
+    override fun addMessage(message: String, enableThinking: Boolean) {
         InferenceLimits.requireWithinBudget(message, "user message")
         client.withService { it.addMessage(sessionId, message, enableThinking) }
     }
@@ -30,7 +30,7 @@ class LlamaGenerationSession internal constructor(
      * The bytes cross the binder boundary, so the caller must pre-resize the
      * image to stay well under the transaction cap.
      */
-    fun setImageData(imageData: ByteArray) {
+    override fun setImageData(imageData: ByteArray) {
         client.withService { it.setImageData(sessionId, imageData) }
     }
 
@@ -76,7 +76,7 @@ class LlamaGenerationSession internal constructor(
 
     fun getReport(): String = client.withService { it.getSessionReport(sessionId) }
 
-    fun destroy() {
+    override fun destroy() {
         try { client.withService { it.destroySession(sessionId) } } catch (_: Throwable) {}
     }
 
@@ -86,7 +86,7 @@ class LlamaGenerationSession internal constructor(
      * disable tool calling for the next generation. Stateless on the
      * client side — every [generateAll] uses whatever was last set.
      */
-    fun setTools(toolsJson: String) {
+    override fun setTools(toolsJson: String) {
         client.withService { it.setTools(sessionId, toolsJson) }
     }
 
@@ -95,7 +95,7 @@ class LlamaGenerationSession internal constructor(
      * calls as a JSON array. Each element has `id`, `name`, and
      * `arguments` fields. Returns `"[]"` when no calls are pending.
      */
-    fun getToolCallsJson(): String =
+    override fun getToolCallsJson(): String =
         client.withService { it.getToolCallsJson(sessionId) }
 
     /**
@@ -104,8 +104,22 @@ class LlamaGenerationSession internal constructor(
      * `resultsJson` is a JSON array of `{ id, name, content }` objects.
      * Returns 0 on success, non-zero on error.
      */
-    fun submitToolResults(resultsJson: String, enableThinking: Boolean): Int =
+    fun submitToolResultsForStatus(resultsJson: String, enableThinking: Boolean): Int =
         client.withService { it.submitToolResults(sessionId, resultsJson, enableThinking) }
+
+    override fun submitToolResults(resultsJson: String, enableThinking: Boolean) {
+        submitToolResultsForStatus(resultsJson, enableThinking)
+    }
+
+    /**
+     * Cancellation across the binder is driven by cancelling the coroutine
+     * that called [generateAll] (which then issues cancelGeneration and waits
+     * for the worker to acknowledge). This exists to satisfy
+     * [GenerationSession]; direct callers should cancel the coroutine.
+     */
+    override fun requestAbort() {
+        client.withService { it.cancelGeneration(sessionId) }
+    }
 
     /**
      * Wire up the persistent preamble (system prompt + tools) KV cache.
@@ -141,7 +155,7 @@ class LlamaGenerationSession internal constructor(
      * via [submitToolResults] + a fresh [generateAll]), other non-zero
      * status from the service on error / cancel.
      */
-    suspend fun generateAll(callback: LlamaGenerationCallback): Int {
+    override suspend fun generateAll(callback: LlamaGenerationCallback): Int {
         // Snapshot a service for the duration of this generation. If it
         // dies we'll surface InferenceUnavailableException via withService
         // semantics (the cancel/finalize calls below tolerate failure).

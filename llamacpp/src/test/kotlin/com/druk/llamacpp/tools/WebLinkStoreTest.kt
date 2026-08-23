@@ -1,4 +1,4 @@
-package com.druk.lmplayground.tools
+package com.druk.llamacpp.tools
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

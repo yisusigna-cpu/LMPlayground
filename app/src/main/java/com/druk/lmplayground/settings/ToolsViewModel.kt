@@ -5,8 +5,9 @@ import androidx.lifecycle.AndroidViewModel
 import com.druk.lmplayground.storage.StoragePreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import com.druk.lmplayground.tools.Tool
-import com.druk.lmplayground.tools.ToolRegistry
+import com.druk.llamacpp.tools.Tool
+import com.druk.llamacpp.tools.ToolRegistry
+import com.druk.lmplayground.tools.createDefault
 
 /**
  * Backs the Settings → Tools screen. Reads and writes the *global default*

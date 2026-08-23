@@ -36,8 +36,16 @@ class NativeLlamaCpp {
     external fun loadModel(
         path: String,
         progressCallback: LlamaProgressCallback,
-        disableRepack: Boolean
+        disableRepack: Boolean,
+        chatTemplateOverride: String
     ): NativeLlamaModel?
+
+    /** Loads with the GGUF's own chat template. */
+    fun loadModel(
+        path: String,
+        progressCallback: LlamaProgressCallback,
+        disableRepack: Boolean
+    ): NativeLlamaModel? = loadModel(path, progressCallback, disableRepack, "")
 
     external fun probeModelMetadata(path: String): Array<String>?
 }

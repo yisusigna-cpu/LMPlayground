@@ -1,4 +1,4 @@
-package com.druk.lmplayground.tools
+package com.druk.llamacpp.tools
 
 /**
  * Shared between [WebSearchTool] and [WebFetchTool].

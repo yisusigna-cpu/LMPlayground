@@ -57,7 +57,7 @@ import com.druk.lmplayground.R
 import com.druk.lmplayground.data.SystemPromptEntity
 import com.druk.lmplayground.settings.SystemPromptEditorSheet
 import com.druk.lmplayground.settings.ToolsContent
-import com.druk.lmplayground.tools.Tool
+import com.druk.llamacpp.tools.Tool
 import kotlin.math.roundToInt
 
 /**

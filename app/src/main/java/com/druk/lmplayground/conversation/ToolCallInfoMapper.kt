@@ -1,10 +1,11 @@
 package com.druk.lmplayground.conversation
 
-import org.json.JSONArray
+import com.druk.llamacpp.chat.ToolCallPairing
 
 /**
- * Maps the native layer's tool-call / tool-result JSON payloads into the
- * [ToolCallInfo] list shown on the assistant message.
+ * Adapts the engine's ToolCallRecords to the Compose [ToolCallInfo] shown on
+ * an assistant message. The call/result pairing itself lives in :llamacpp so
+ * the harness exercises the same logic the app does.
  */
 object ToolCallInfoMapper {
 
@@ -12,25 +13,13 @@ object ToolCallInfoMapper {
         toolCallsJson: String,
         toolResultsJson: String,
         totalDurationMs: Long,
-    ): List<ToolCallInfo> {
-        val calls = JSONArray(toolCallsJson)
-        val results = JSONArray(toolResultsJson)
-        val resultMap = mutableMapOf<String, String>()
-        for (i in 0 until results.length()) {
-            val r = results.getJSONObject(i)
-            resultMap[r.getString("id")] = r.getString("content")
-        }
-        val count = calls.length().coerceAtLeast(1)
-        val perCallMs = totalDurationMs / count
-        return (0 until calls.length()).map { i ->
-            val call = calls.getJSONObject(i)
-            val id = call.getString("id")
+    ): List<ToolCallInfo> =
+        ToolCallPairing.pair(toolCallsJson, toolResultsJson, totalDurationMs).map { record ->
             ToolCallInfo(
-                name = call.getString("name"),
-                arguments = call.getString("arguments"),
-                result = resultMap[id] ?: "",
-                durationMs = perCallMs
+                name = record.name,
+                arguments = record.arguments,
+                result = record.result,
+                durationMs = record.durationMs,
             )
         }
-    }
 }

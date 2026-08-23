@@ -29,7 +29,8 @@ import com.druk.lmplayground.rag.RagPromptBuilder
 import com.druk.lmplayground.rag.RagRepository
 import com.druk.lmplayground.storage.StoragePreferences
 import com.druk.lmplayground.storage.StorageRepository
-import com.druk.lmplayground.tools.ToolRegistry
+import com.druk.llamacpp.tools.ToolRegistry
+import com.druk.lmplayground.tools.createDefault
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.lifecycle.Observer
 import androidx.work.WorkInfo

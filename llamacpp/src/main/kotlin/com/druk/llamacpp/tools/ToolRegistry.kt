@@ -1,6 +1,5 @@
-package com.druk.lmplayground.tools
+package com.druk.llamacpp.tools
 
-import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -78,16 +77,10 @@ class ToolRegistry {
         return results.toString()
     }
 
-    companion object {
-        fun createDefault(context: Context): ToolRegistry {
-            return ToolRegistry().apply {
-                // Shared link store: web_search hands the model compact
-                // "ddg:N" references instead of long URLs, web_fetch resolves
-                // them back at call time. See WebLinkStore.
-                register(WebSearchTool(webLinkStore))
-                register(WebFetchTool(webLinkStore))
-                register(JavaScriptTool(context))
-            }
-        }
-    }
+    /**
+     * Exists so :app can hang [createDefault] off it as an extension: the
+     * concrete tools need a Context / okhttp / the JS engine and stay there,
+     * while the registry itself must be usable from a plain JVM.
+     */
+    companion object
 }
