@@ -15,6 +15,7 @@ import com.druk.lmplayground.inference.ProcessUtils
 import com.druk.lmplayground.rag.EmbeddingModelManager
 import com.druk.lmplayground.rag.RagRepository
 import com.druk.lmplayground.storage.LegacyDownloadCleanup
+import com.druk.lmplayground.storage.SupersededFileCleanup
 import com.druk.lmplayground.storage.StoragePreferences
 import com.druk.lmplayground.storage.StorageRepository
 import kotlinx.coroutines.CoroutineScope
@@ -93,6 +94,11 @@ class App : Application() {
         val appContext = applicationContext
         thread(isDaemon = true, name = "legacy-download-cleanup") {
             LegacyDownloadCleanup.run(appContext)
+            // Also drop model files a catalog change has retired, but only
+            // once their replacement is on disk (see SupersededFileCleanup).
+            SupersededFileCleanup.run(
+                StorageRepository(appContext, StoragePreferences(appContext))
+            )
         }
 
         val database = AppDatabase.getInstance(this)

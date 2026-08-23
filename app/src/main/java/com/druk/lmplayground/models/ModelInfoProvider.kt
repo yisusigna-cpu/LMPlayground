@@ -328,24 +328,24 @@ object ModelInfoProvider {
             filename = "gemma-4-E2B_q4_0-it.gguf",
             remoteUri = Uri.parse("https://huggingface.co/google/gemma-4-E2B-it-qat-q4_0-gguf/resolve/main/gemma-4-E2B_q4_0-it.gguf"),
             releaseDate = LocalDate.parse("2026-03-25"),
-            description = "Google \u00B7 QAT on-device vision model \u00B7 3.35Gb + 987Mb mmproj",
+            description = "Google \u00B7 QAT on-device vision model \u00B7 3.35Gb + 532Mb mmproj",
             logoRes = R.drawable.logo_google,
             supportedLanguages = MULTILINGUAL_BROAD,
             // Vision is quant-independent: the QAT q4_0 text model uses the same
             // BF16 mmproj as the Q4_K_M build (validated on-device).
-            mmprojFilename = "mmproj-gemma-4-E2B-it-BF16.gguf",
-            mmprojUri = Uri.parse("https://huggingface.co/lmstudio-community/gemma-4-E2B-it-GGUF/resolve/main/mmproj-gemma-4-E2B-it-BF16.gguf")
+            mmprojFilename = "mmproj-gemma-4-E2B-it-Q8_0.gguf",
+            mmprojUri = Uri.parse("https://huggingface.co/ggml-org/gemma-4-E2B-it-GGUF/resolve/main/mmproj-gemma-4-E2B-it-Q8_0.gguf")
         ),
         ModelInfo(
             name = "Gemma 4 E4B",
             filename = "gemma-4-E4B_q4_0-it.gguf",
             remoteUri = Uri.parse("https://huggingface.co/google/gemma-4-E4B-it-qat-q4_0-gguf/resolve/main/gemma-4-E4B_q4_0-it.gguf"),
             releaseDate = LocalDate.parse("2026-03-25"),
-            description = "Google \u00B7 QAT on-device vision model \u00B7 5.15Gb + 992Mb mmproj",
+            description = "Google \u00B7 QAT on-device vision model \u00B7 5.15Gb + 545Mb mmproj",
             logoRes = R.drawable.logo_google,
             supportedLanguages = MULTILINGUAL_BROAD,
-            mmprojFilename = "mmproj-gemma-4-E4B-it-BF16.gguf",
-            mmprojUri = Uri.parse("https://huggingface.co/lmstudio-community/gemma-4-E4B-it-GGUF/resolve/main/mmproj-gemma-4-E4B-it-BF16.gguf")
+            mmprojFilename = "mmproj-gemma-4-E4B-it-Q8_0.gguf",
+            mmprojUri = Uri.parse("https://huggingface.co/ggml-org/gemma-4-E4B-it-GGUF/resolve/main/mmproj-gemma-4-E4B-it-Q8_0.gguf")
         ),
         ModelInfo(
             name = "Gemma 4 12B",
@@ -364,24 +364,24 @@ object ModelInfoProvider {
             filename = "gemma-4-E2B-it-Q4_K_M.gguf",
             remoteUri = Uri.parse("https://huggingface.co/lmstudio-community/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q4_K_M.gguf"),
             releaseDate = LocalDate.parse("2026-03-25"),
-            description = "Google \u00B7 Efficient vision model \u00B7 3.43Gb + 987Mb mmproj",
+            description = "Google \u00B7 Efficient vision model \u00B7 3.43Gb + 532Mb mmproj",
             logoRes = R.drawable.logo_google,
             supportedLanguages = MULTILINGUAL_BROAD,
             deprecated = true,
-            mmprojFilename = "mmproj-gemma-4-E2B-it-BF16.gguf",
-            mmprojUri = Uri.parse("https://huggingface.co/lmstudio-community/gemma-4-E2B-it-GGUF/resolve/main/mmproj-gemma-4-E2B-it-BF16.gguf")
+            mmprojFilename = "mmproj-gemma-4-E2B-it-Q8_0.gguf",
+            mmprojUri = Uri.parse("https://huggingface.co/ggml-org/gemma-4-E2B-it-GGUF/resolve/main/mmproj-gemma-4-E2B-it-Q8_0.gguf")
         ),
         ModelInfo(
             name = "Gemma 4 E4B (Q4_K_M)",
             filename = "gemma-4-E4B-it-Q4_K_M.gguf",
             remoteUri = Uri.parse("https://huggingface.co/lmstudio-community/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf"),
             releaseDate = LocalDate.parse("2026-03-25"),
-            description = "Google \u00B7 Efficient vision model \u00B7 5.34Gb + 992Mb mmproj",
+            description = "Google \u00B7 Efficient vision model \u00B7 5.34Gb + 545Mb mmproj",
             logoRes = R.drawable.logo_google,
             supportedLanguages = MULTILINGUAL_BROAD,
             deprecated = true,
-            mmprojFilename = "mmproj-gemma-4-E4B-it-BF16.gguf",
-            mmprojUri = Uri.parse("https://huggingface.co/lmstudio-community/gemma-4-E4B-it-GGUF/resolve/main/mmproj-gemma-4-E4B-it-BF16.gguf")
+            mmprojFilename = "mmproj-gemma-4-E4B-it-Q8_0.gguf",
+            mmprojUri = Uri.parse("https://huggingface.co/ggml-org/gemma-4-E4B-it-GGUF/resolve/main/mmproj-gemma-4-E4B-it-Q8_0.gguf")
         ),
         ModelInfo(
             name = "Gemma 4 12B (Q4_K_M)",
@@ -465,9 +465,9 @@ object ModelInfoProvider {
     // here only mis-paints a list badge \u2014 it never affects whether tools actually
     // run, which is gated separately on the loaded model's real capability.
     //
-    // Checked against every catalog GGUF's embedded template (jinja::caps).
-    // Llama 3.2 1B, Phi-4 mini and Mistral 7B were listed here but their
-    // templates report supports_tools=false, so the badge promised a
+    // Verified against every catalog GGUF's embedded template (jinja::caps) by
+    // :model-harness. Llama 3.2 1B, Phi-4 mini and Mistral 7B were listed here
+    // but their templates report supports_tools=false, so the badge promised a
     // capability the engine would never enable \u2014 removed.
     private val TOOL_CAPABLE = setOf(
         "Qwen3-0.6B-Q4_K_M.gguf",
