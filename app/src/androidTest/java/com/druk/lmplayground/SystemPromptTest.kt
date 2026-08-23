@@ -1,5 +1,6 @@
 package com.druk.lmplayground
 
+import com.druk.llamacpp.chat.ResponseProcessor
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import com.druk.llamacpp.LlamaGenerationCallback
@@ -7,7 +8,6 @@ import com.druk.llamacpp.LlamaProgressCallback
 import com.druk.llamacpp.jni.NativeLlamaCpp
 import com.druk.llamacpp.jni.NativeLlamaModel
 import com.druk.llamacpp.jni.NativeLlamaSession
-import com.druk.lmplayground.conversation.ResponseProcessor
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Assume.assumeTrue

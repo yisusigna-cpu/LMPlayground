@@ -1,5 +1,6 @@
 package com.druk.lmplayground
 
+import com.druk.llamacpp.chat.ResponseProcessor
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import com.druk.llamacpp.LlamaGenerationCallback
@@ -7,7 +8,6 @@ import com.druk.llamacpp.LlamaProgressCallback
 import com.druk.llamacpp.jni.NativeLlamaCpp
 import com.druk.llamacpp.jni.NativeLlamaModel
 import com.druk.llamacpp.jni.NativeLlamaSession
-import com.druk.lmplayground.conversation.ResponseProcessor
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Assume.assumeTrue
@@ -42,6 +42,10 @@ class ModelGenerationTest {
             "Qwen_Qwen3.5-2B-Q3_K_M.gguf",
             "DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf",
             "NVIDIA-Nemotron3-Nano-4B-Q4_K_M.gguf",
+            // The QAT builds are what the catalog actually ships; the Q4_K_M
+            // entries below are the deprecated ones kept for older installs.
+            "gemma-4-E2B_q4_0-it.gguf",
+            "gemma-4-E4B_q4_0-it.gguf",
             "gemma-4-E2B-it-Q4_K_M.gguf",
             "gemma-4-E4B-it-Q4_K_M.gguf"
         )
@@ -285,6 +289,10 @@ class ModelGenerationTest {
         "mmproj-Qwen_Qwen3.5-0.8B-f16.gguf",
         "mmproj-Qwen_Qwen3.5-2B-f16.gguf",
         "mmproj-Qwen_Qwen3.5-4B-f16.gguf",
+        "mmproj-gemma-4-E2B-it-Q8_0.gguf",
+        "mmproj-gemma-4-E4B-it-Q8_0.gguf",
+        // BF16 projectors are superseded (no ARM CPU kernel; ~15x slower to
+        // encode) but may still be present on older installs.
         "mmproj-gemma-4-E2B-it-BF16.gguf",
         "mmproj-gemma-4-E4B-it-BF16.gguf",
         "gemma-3-4b-it-mmproj-f16.gguf"

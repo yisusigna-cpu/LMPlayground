@@ -6,7 +6,8 @@ import com.druk.llamacpp.LlamaProgressCallback
 import com.druk.llamacpp.jni.NativeLlamaCpp
 import com.druk.llamacpp.jni.NativeLlamaModel
 import com.druk.llamacpp.jni.NativeLlamaSession
-import com.druk.lmplayground.tools.ToolRegistry
+import com.druk.llamacpp.tools.ToolRegistry
+import com.druk.lmplayground.tools.createDefault
 import com.druk.lmplayground.tools.WebSearchTool
 import com.druk.lmplayground.tools.JavaScriptTool
 import com.druk.lmplayground.tools.WebFetchTool
