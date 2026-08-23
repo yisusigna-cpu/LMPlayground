@@ -595,8 +595,14 @@ int LlamaGenerationSession::processImageTurn(std::vector<unsigned char> &image_d
 
     // Tokenize prompt with image
     mtmd_input_chunks *chunks = mtmd_input_chunks_init();
-    mtmd_input_text text;
+    // Zero-init: mtmd_input_text also carries text_len, which mtmd_tokenize
+    // reads as the length for its internal std::string assign. Leaving it
+    // uninitialized meant every vision turn assigned from a garbage length —
+    // undefined behaviour that shows up as a memmove crash inside
+    // mtmd_tokenizer's constructor.
+    mtmd_input_text text{};
     text.text = full_prompt.c_str();
+    text.text_len = full_prompt.size();
     text.add_special = true;
     text.parse_special = true;
     const mtmd_bitmap *bitmaps[] = { bitmap };
@@ -608,6 +614,23 @@ int LlamaGenerationSession::processImageTurn(std::vector<unsigned char> &image_d
         LOGe("Failed to tokenize vision prompt (error: %d)", tokenize_result);
         mtmd_input_chunks_free(chunks);
         return 1;
+    }
+
+    // Log how the prompt split into text vs image tokens. Image token count
+    // is the single most useful vision diagnostic: too few means the encoder
+    // got a starved representation (blurry/na answers), and it is also what
+    // drives CLIP encode time, which users experience as a hang.
+    {
+        size_t n_chunks = mtmd_input_chunks_size(chunks);
+        size_t n_text = 0, n_image = 0;
+        for (size_t i = 0; i < n_chunks; i++) {
+            const mtmd_input_chunk *chunk = mtmd_input_chunks_get(chunks, i);
+            size_t n = mtmd_input_chunk_get_n_tokens(chunk);
+            if (mtmd_input_chunk_get_type(chunk) == MTMD_INPUT_CHUNK_TYPE_TEXT) n_text += n;
+            else n_image += n;
+        }
+        LOGi("Vision tokenize: %zu chunks, %zu text tokens, %zu image tokens",
+             n_chunks, n_text, n_image);
     }
 
     // Eval all chunks (text + image)
