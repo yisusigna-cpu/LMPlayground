@@ -181,12 +181,25 @@ object ModelInfoProvider {
             supportedLanguages = LFM_LANGS
         ),
         ModelInfo(
+            name = "LFM2.5 1.2B",
+            filename = "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
+            remoteUri = Uri.parse("https://huggingface.co/LiquidAI/LFM2.5-1.2B-Instruct-GGUF/resolve/main/LFM2.5-1.2B-Instruct-Q4_K_M.gguf"),
+            releaseDate = LocalDate.parse("2026-08-19"),
+            description = "Liquid AI \u00B7 Compact chat model \u00B7 697Mb",
+            logoRes = R.drawable.logo_liquid,
+            supportedLanguages = LFM25_LANGS
+        ),
+        // Superseded by the Instruct build above: same size class, but this one
+        // reasons before every reply, which is the wrong default for a compact
+        // chat model. Kept so an already-downloaded copy is still recognized.
+        ModelInfo(
             name = "LFM2.5 1.2B Thinking",
             filename = "LFM2.5-1.2B-Thinking-Q4_K_M.gguf",
             remoteUri = Uri.parse("https://huggingface.co/lmstudio-community/LFM2.5-1.2B-Thinking-GGUF/resolve/main/LFM2.5-1.2B-Thinking-Q4_K_M.gguf"),
             releaseDate = LocalDate.parse("2025-01-09"),
             description = "Liquid AI \u00B7 Thinking model \u00B7 731Mb",
             logoRes = R.drawable.logo_liquid,
+            deprecated = true,
             supportedLanguages = LFM_LANGS
         ),
         ModelInfo(
@@ -478,6 +491,7 @@ object ModelInfoProvider {
         "Qwen_Qwen3.5-4B-IQ4_XS.gguf",
         "Llama-3.2-3B-Instruct-Q4_K_M.gguf",
         "LFM2.5-350M-Q4_K_M.gguf",
+        "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
         "LFM2.5-1.2B-Thinking-Q4_K_M.gguf",
         "LFM2.5-2.6B-Q4_K_M.gguf",
         "HuggingFaceTB_SmolLM3-3B-Q4_K_M.gguf",
@@ -512,6 +526,7 @@ object ModelInfoProvider {
         "DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf",
         "DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf",
         "LFM2.5-350M-Q4_K_M.gguf",
+        "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
         "LFM2.5-1.2B-Thinking-Q4_K_M.gguf",
         "LFM2.5-2.6B-Q4_K_M.gguf",
         "HuggingFaceTB_SmolLM3-3B-Q4_K_M.gguf",

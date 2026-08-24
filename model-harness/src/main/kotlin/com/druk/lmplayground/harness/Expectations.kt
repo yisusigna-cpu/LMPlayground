@@ -52,13 +52,13 @@ object Expectations {
     /** The default corpus: <=4B parameters, latest generation per family. */
     val ALL: List<ModelExpectation> = listOf(
         // ── Alibaba: Qwen 3.5 (vision, thinking, tools) ──────────────────
-        ModelExpectation("Qwen_Qwen3.5-0.8B-Q3_K_M.gguf",
+        ModelExpectation("Qwen_Qwen3.5-0.8B-IQ4_XS.gguf",
             caps(tools = O, thinking = R, noThinking = R, vision = R, toolsWithThinking = O),
             maxTokens = 2048, notes = "0.8B: emission unreliable, parsing must still work"),
-        ModelExpectation("Qwen_Qwen3.5-2B-Q3_K_M.gguf",
+        ModelExpectation("Qwen_Qwen3.5-2B-IQ4_XS.gguf",
             caps(tools = R, thinking = R, noThinking = R, vision = R, toolsWithThinking = R),
             strictEmission = true, maxTokens = 2048),
-        ModelExpectation("Qwen_Qwen3.5-4B-Q3_K_M.gguf",
+        ModelExpectation("Qwen_Qwen3.5-4B-IQ4_XS.gguf",
             caps(tools = R, thinking = R, noThinking = R, vision = R, toolsWithThinking = R),
             strictEmission = true, maxTokens = 2048),
 
@@ -92,6 +92,10 @@ object Expectations {
             caps(tools = O, thinking = O, noThinking = R, vision = N),
             notes = "350M; template can't render tool_calls but the specialized " +
                 "LFM2.5 parser handles emission — verified 2026-08, no override needed"),
+        ModelExpectation("LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
+            caps(tools = O, thinking = O, noThinking = R, vision = N, toolsWithThinking = O),
+            notes = "replaced the Thinking build as the compact default; its template " +
+                "still exposes a thinking mode, it just doesn't reason by default"),
         ModelExpectation("LFM2.5-1.2B-Thinking-Q4_K_M.gguf",
             caps(tools = O, thinking = R, noThinking = O, vision = N, toolsWithThinking = O),
             maxTokens = 2048, notes = "reasons at length; needs a bigger token budget"),
