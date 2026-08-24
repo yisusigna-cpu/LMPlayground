@@ -100,19 +100,26 @@ object Expectations {
             caps(tools = O, thinking = R, noThinking = O, vision = N, toolsWithThinking = O),
             maxTokens = 2048, notes = "reasons at length; needs a bigger token budget"),
         ModelExpectation("LFM2.5-2.6B-Q4_K_M.gguf",
-            caps(tools = R, thinking = R, noThinking = R, vision = N, toolsWithThinking = O),
-            maxTokens = 2048),
+            caps(tools = R, thinking = R, noThinking = O, vision = N, toolsWithThinking = O),
+            maxTokens = 2048,
+            notes = "reasoning-tuned: still emits <think> with thinking disabled, so the " +
+                "app's toggle cannot suppress it"),
 
         // ── Mistral: Ministral 3 (vision) ────────────────────────────────
         ModelExpectation("Ministral-3-3B-Instruct-2512-Q4_K_M.gguf",
-            caps(tools = R, thinking = N, noThinking = R, vision = R)),
+            caps(tools = R, thinking = O, noThinking = R, vision = R),
+            notes = "template advertises thinking but the model never emits a <think> " +
+                "block, so the app shows a toggle that does nothing"),
         ModelExpectation("Ministral-3-3B-Reasoning-2512-Q4_K_M.gguf",
-            caps(tools = R, thinking = R, noThinking = R, vision = R, toolsWithThinking = R),
-            maxTokens = 2048),
+            caps(tools = R, thinking = R, noThinking = O, vision = R, toolsWithThinking = R),
+            maxTokens = 2048,
+            notes = "reasoning-tuned: still emits <think> with thinking disabled"),
 
         // ── IBM ──────────────────────────────────────────────────────────
         ModelExpectation("granite-4.1-3b-Q4_K_M.gguf",
-            caps(tools = R, thinking = O, noThinking = R, vision = N)),
+            caps(tools = R, thinking = N, noThinking = R, vision = N),
+            notes = "no thinking mode: the template reports supports_thinking=false and the " +
+                "model emits no <think> block. The catalog badge already agrees"),
 
         // ── NVIDIA ───────────────────────────────────────────────────────
         ModelExpectation("NVIDIA-Nemotron3-Nano-4B-Q4_K_M.gguf",

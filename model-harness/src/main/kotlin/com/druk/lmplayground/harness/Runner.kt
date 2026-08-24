@@ -24,6 +24,7 @@ object Runner {
         ThinkingProbe,
         VisionProbe,
         MultiTurnProbe,
+        ReplayProbe,
         ToolsWhileThinkingProbe,
     )
 

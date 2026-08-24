@@ -21,6 +21,7 @@ object Report {
         "NoThink" to Cap.NO_THINKING,
         "Vision" to Cap.VISION,
         "MultiTurn" to Cap.MULTI_TURN,
+        "Replay" to null,
         "Tool+Think" to Cap.TOOLS_WITH_THINKING,
     )
 
@@ -37,6 +38,7 @@ object Report {
             "NoThink" -> r.results.filter { it.probe == "think" && it.detail["mode"] == "no-think" }
             "Vision" -> r.results.filter { it.probe.startsWith("vision") }
             "Tools" -> r.results.filter { it.probe == "tools" }
+            "Replay" -> r.results.filter { it.probe == "replay" }
             "Tool+Think" -> r.results.filter { it.probe == "tools+think" }
             else -> r.results.filter { it.cap == cap }
         }
