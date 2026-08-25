@@ -18,6 +18,7 @@ import com.druk.lmplayground.data.ConversationMetadata
 import com.druk.lmplayground.data.SystemPromptEntity
 import com.druk.lmplayground.models.DeviceCapability
 import com.druk.lmplayground.models.ModelInfo
+import com.druk.lmplayground.models.ThinkingMode
 import com.druk.lmplayground.models.ModelInfoProvider
 import com.druk.lmplayground.models.ModelWithStatus
 import com.druk.lmplayground.models.resolveCapabilities
@@ -62,6 +63,9 @@ class ConversationViewModel(val app: Application) : AndroidViewModel(app) {
     private val _models = MutableLiveData<List<ModelWithStatus>>(emptyList())
     private val _supportsThinking = MutableLiveData(false)
     private val _thinkingEnabled = MutableLiveData(false)
+    // Distinct from supportsThinking: a model can think (so the budget applies)
+    // while the on/off switch is meaningless because it always reasons.
+    private val _thinkingToggleable = MutableLiveData(false)
     private val _generationParams = MutableLiveData(GenerationParams())
     private val _maxContextSize = MutableLiveData(4096)
     private val _sessionModelHint = MutableLiveData<Pair<String, String>?>(null) // (modelName, modelFilename)
@@ -117,6 +121,7 @@ class ConversationViewModel(val app: Application) : AndroidViewModel(app) {
             _loadedModel.postValue(model)
             _thinkingEnabled.postValue(false)
             _supportsThinking.postValue(false)
+            _thinkingToggleable.postValue(false)
             _supportsVision.postValue(false)
         }
 
@@ -143,7 +148,20 @@ class ConversationViewModel(val app: Application) : AndroidViewModel(app) {
             vision: Boolean,
             toolCalling: Boolean,
         ) {
-            _supportsThinking.postValue(thinking)
+            // The template's flag is the fallback; measured behaviour wins where
+            // we have it. Without this the toggle appears for models that never
+            // think, and offers "off" to models that always do.
+            val mode = model.thinkingMode
+            val canThink = when (mode) {
+                ThinkingMode.NONE -> false
+                ThinkingMode.OPTIONAL, ThinkingMode.ALWAYS -> true
+                ThinkingMode.UNKNOWN -> thinking
+            }
+            _supportsThinking.postValue(canThink)
+            // Only offer the switch when turning it off actually does something.
+            _thinkingToggleable.postValue(canThink && mode != ThinkingMode.ALWAYS)
+            // A model that always reasons is shown as thinking, not as "off".
+            if (mode == ThinkingMode.ALWAYS) _thinkingEnabled.postValue(true)
             _supportsVision.postValue(vision)
             _supportsToolCalling.postValue(toolCalling)
             if (toolCalling) {
@@ -358,6 +376,7 @@ class ConversationViewModel(val app: Application) : AndroidViewModel(app) {
     val models: LiveData<List<ModelWithStatus>> = _models
     val supportsThinking: LiveData<Boolean> = _supportsThinking
     val thinkingEnabled: LiveData<Boolean> = _thinkingEnabled
+    val thinkingToggleable: LiveData<Boolean> = _thinkingToggleable
     val generationParams: LiveData<GenerationParams> = _generationParams
     val maxContextSize: LiveData<Int> = _maxContextSize
     val sessionModelHint: LiveData<Pair<String, String>?> = _sessionModelHint

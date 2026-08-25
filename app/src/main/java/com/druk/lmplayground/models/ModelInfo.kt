@@ -12,6 +12,24 @@ import java.util.Locale
  * Chat template parameters (prefix, suffix, stop sequences) are read
  * from the GGUF file's embedded Jinja template at load time.
  */
+/**
+ * How a model behaves when asked to think, as measured rather than as its chat
+ * template advertises. The two disagree often enough to matter: templates
+ * declare a thinking mode the weights never use, and reasoning-tuned models
+ * keep reasoning whatever the flag says. Gating the UI on the template alone
+ * gives the user a switch that does nothing, in one direction or the other.
+ */
+enum class ThinkingMode {
+    /** Never produces a thinking block, whatever the template claims. */
+    NONE,
+    /** The toggle works: thinking on produces a block, off suppresses it. */
+    OPTIONAL,
+    /** Always reasons; "off" cannot be honoured. */
+    ALWAYS,
+    /** Not measured — fall back to the template's own capability flag. */
+    UNKNOWN,
+}
+
 data class ModelInfo(
     val name: String,
     val filename: String,
@@ -27,6 +45,8 @@ data class ModelInfo(
     // [resolveCapabilities].
     val supportsTools: Boolean = false,
     val supportsThinking: Boolean = false,
+    // Measured behaviour, which overrides supportsThinking for UI purposes.
+    val thinkingMode: ThinkingMode = ThinkingMode.UNKNOWN,
     // Legacy catalog entry kept only so an already-downloaded file is still
     // recognized (name/logo/description) instead of falling back to a nameless
     // custom model. Never offered for download: hidden from the list unless the

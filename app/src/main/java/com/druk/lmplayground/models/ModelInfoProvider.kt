@@ -543,10 +543,39 @@ object ModelInfoProvider {
         "gpt-oss-20b-mxfp4.gguf",
     )
 
+    // Measured with :model-harness: thinking on must produce a <think> block and
+    // thinking off must suppress it. Where a model disagrees with its own
+    // template, this is what the UI follows — see ThinkingMode.
+    private val THINKING_MODE = mapOf(
+        // Templates advertise a thinking mode these models never actually use,
+        // so the toggle would appear and do nothing.
+        "Ministral-3-3B-Instruct-2512-Q4_K_M.gguf" to ThinkingMode.NONE,
+        "LFM2.5-1.2B-Instruct-Q4_K_M.gguf" to ThinkingMode.NONE,
+        "LFM2.5-350M-Q4_K_M.gguf" to ThinkingMode.NONE,
+
+        // Reasoning-tuned: they keep thinking with the flag off, so offering
+        // "off" is a promise the model will not keep.
+        "DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf" to ThinkingMode.ALWAYS,
+        "LFM2.5-1.2B-Thinking-Q4_K_M.gguf" to ThinkingMode.ALWAYS,
+        "LFM2.5-2.6B-Q4_K_M.gguf" to ThinkingMode.ALWAYS,
+        "Ministral-3-3B-Reasoning-2512-Q4_K_M.gguf" to ThinkingMode.ALWAYS,
+
+        // Verified to honour the toggle in both directions.
+        "Qwen_Qwen3.5-0.8B-IQ4_XS.gguf" to ThinkingMode.OPTIONAL,
+        "Qwen_Qwen3.5-2B-IQ4_XS.gguf" to ThinkingMode.OPTIONAL,
+        "Qwen_Qwen3.5-4B-IQ4_XS.gguf" to ThinkingMode.OPTIONAL,
+        "gemma-4-E2B_q4_0-it.gguf" to ThinkingMode.OPTIONAL,
+        "gemma-4-E4B_q4_0-it.gguf" to ThinkingMode.OPTIONAL,
+        "HuggingFaceTB_SmolLM3-3B-Q4_K_M.gguf" to ThinkingMode.OPTIONAL,
+        "MiniCPM5-1B-Q4_K_M.gguf" to ThinkingMode.OPTIONAL,
+        "NVIDIA-Nemotron3-Nano-4B-Q4_K_M.gguf" to ThinkingMode.OPTIONAL,
+    )
+
     val allModels: List<ModelInfo> = rawModels.map { model ->
         model.copy(
             supportsTools = model.filename in TOOL_CAPABLE,
             supportsThinking = model.filename in THINKING_CAPABLE,
+            thinkingMode = THINKING_MODE[model.filename] ?: ThinkingMode.UNKNOWN,
         )
     }
 
