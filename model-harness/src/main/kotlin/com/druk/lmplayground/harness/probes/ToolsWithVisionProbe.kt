@@ -38,7 +38,13 @@ object ToolsWithVisionProbe : Probe {
             )
 
         try {
-            ctx.model.loadMmprojModel(mmproj.absolutePath)
+            // The model is loaded once per worker and shared across probes, so
+            // VisionProbe may already have attached the projector. Loading it a
+            // second time overwrites mtmd_ctx without freeing the first, which
+            // aborts at teardown — so attach only if it is not already there.
+            if (!ctx.model.supportsVision()) {
+                ctx.model.loadMmprojModel(mmproj.absolutePath)
+            }
         } catch (t: Throwable) {
             return listOf(
                 ProbeResult(name, cap, Status.ERROR, "MMPROJ_LOAD_FAILED",
