@@ -17,6 +17,7 @@
 #include "reasoning-budget.h"
 #include "nlohmann/json.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <cinttypes>
 #include <cmath>
@@ -368,11 +369,28 @@ int LlamaGenerationSession::addMessage(const char *string, bool enableThinking) 
         }
     }
 
+    // prev_len == 0 means the whole prompt is about to be re-sent, which is
+    // only correct against an empty cache. Several paths zero prev_len without
+    // clearing it — a failed re-render in finalizeResponse, replayHistory into
+    // a session that has already been used — and stale entries there are doubly
+    // harmful: the conversation gets duplicated in context, and the compaction
+    // check below believes the window is empty, so it skips compaction and
+    // generate() then rejects the batch and returns an empty reply.
+    if (prev_len == 0) {
+        int stale = (int)llama_memory_seq_pos_max(llama_get_memory(ctx), 0);
+        if (stale > 0) {
+            LOGi("Re-sending full prompt with %d stale tokens in the KV cache, clearing", stale);
+            clearKvCacheForFreshPrompt();
+        }
+    }
+
     std::string prompt = full_prompt.substr(prev_len);
 
     bool is_first = (prev_len == 0);
     int n_ctx = llama_n_ctx(ctx);
-    int n_ctx_used = is_first ? 0 : (int)llama_memory_seq_pos_max(llama_get_memory(ctx), 0);
+    // seq_pos_max returns -1 on an empty cache; clamp so the compaction check
+    // sees the same occupancy generate() will.
+    int n_ctx_used = std::max(0, (int)llama_memory_seq_pos_max(llama_get_memory(ctx), 0));
 
     int n_prompt_tokens = -llama_tokenize(vocab, prompt.c_str(), prompt.size(), NULL, 0, is_first, true);
 
