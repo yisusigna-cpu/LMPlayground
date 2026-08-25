@@ -50,3 +50,12 @@ tasks.register<JavaExec>("capabilityReport") {
     harnessDefaults()
     mainClass.set("com.druk.lmplayground.harness.MainKt")
 }
+
+// Prints the runtime classpath so the harness can be launched directly with
+// `java -cp`, bypassing Gradle. Useful when a sweep must run while the build
+// is otherwise busy — Gradle serializes builds, so a concurrent ./gradlew
+// invocation would block behind it.
+tasks.register("printHarnessClasspath") {
+    val cp = sourceSets["main"].runtimeClasspath
+    doLast { println(cp.asPath) }
+}

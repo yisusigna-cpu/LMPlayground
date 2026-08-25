@@ -22,6 +22,10 @@ fun main(args: Array<String>) {
     val reportDir = File(repo, "build/reports/model-capabilities").apply { mkdirs() }
     val overrideDir = File(repo, "app/src/main/assets/chat_templates")
 
+    // Held for the whole run; released on exit, including a crash.
+    val lock = RunGuard.lockReportDir(reportDir)
+    val buildStamp = RunGuard.buildStamp()
+
     val catalog = Catalog.parse(Catalog.defaultProviderFile(repo))
     val expectations = Expectations.byFilename()
 
@@ -48,6 +52,7 @@ fun main(args: Array<String>) {
             continue
         }
         println("run       ${entry.name}")
+        RunGuard.requireUnchangedBuild(buildStamp)
         reports += if (opts.inProcess) {
             Runner.runModel(entry, expectation, modelsDir, reportDir,
                 Runner.probesFor(opts.probes), overrideDir)
@@ -69,6 +74,7 @@ fun main(args: Array<String>) {
         "backend" to (System.getenv("LMP_HOST_N_GPU_LAYERS")
             ?.let { "CPU (ngl=$it)" } ?: "Metal (default ngl)"),
         "llama.cpp" to submoduleSha(repo),
+        "harness build" to buildStamp,
         "duration" to "${(System.currentTimeMillis() - started) / 1000}s",
     )
 
@@ -77,6 +83,7 @@ fun main(args: Array<String>) {
     println()
     println(Report.console(reports))
     println("report    ${File(reportDir, "report.md")}")
+    lock.close()
 }
 
 private fun modelsDir() = File(
