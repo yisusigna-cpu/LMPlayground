@@ -26,6 +26,8 @@ object Report {
         "Abort" to null,
         "Overflow" to null,
         "Tool+Think" to Cap.TOOLS_WITH_THINKING,
+        "Tool+Vis" to Cap.TOOLS_WITH_VISION,
+        "Embed" to null,
     )
 
     private fun cell(r: ModelReport, column: String, cap: Cap?): String {
@@ -46,6 +48,8 @@ object Report {
             "Abort" -> r.results.filter { it.probe == "abort" }
             "Overflow" -> r.results.filter { it.probe == "overflow" }
             "Tool+Think" -> r.results.filter { it.probe == "tools+think" }
+            "Tool+Vis" -> r.results.filter { it.probe == "tools+vision" }
+            "Embed" -> r.results.filter { it.probe == "embeddings" }
             else -> r.results.filter { it.cap == cap }
         }
         if (relevant.isEmpty()) return "·"

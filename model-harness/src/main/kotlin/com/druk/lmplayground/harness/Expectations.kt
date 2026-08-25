@@ -1,7 +1,10 @@
 package com.druk.lmplayground.harness
 
 /** A capability a probe can assert. */
-enum class Cap { TOOLS, THINKING, NO_THINKING, VISION, MULTI_TURN, TOOLS_WITH_THINKING }
+enum class Cap {
+    TOOLS, THINKING, NO_THINKING, VISION, MULTI_TURN,
+    TOOLS_WITH_THINKING, TOOLS_WITH_VISION,
+}
 
 enum class Expect {
     /** Probe must pass; a failure is a red cell. */
@@ -39,10 +42,12 @@ object Expectations {
         tools: Expect, thinking: Expect, noThinking: Expect,
         vision: Expect, multiTurn: Expect = Expect.REQUIRED,
         toolsWithThinking: Expect = Expect.UNSUPPORTED,
+        toolsWithVision: Expect = Expect.UNSUPPORTED,
     ) = mapOf(
         Cap.TOOLS to tools, Cap.THINKING to thinking, Cap.NO_THINKING to noThinking,
         Cap.VISION to vision, Cap.MULTI_TURN to multiTurn,
         Cap.TOOLS_WITH_THINKING to toolsWithThinking,
+        Cap.TOOLS_WITH_VISION to toolsWithVision,
     )
 
     private val R = Expect.REQUIRED
@@ -53,21 +58,21 @@ object Expectations {
     val ALL: List<ModelExpectation> = listOf(
         // ── Alibaba: Qwen 3.5 (vision, thinking, tools) ──────────────────
         ModelExpectation("Qwen_Qwen3.5-0.8B-IQ4_XS.gguf",
-            caps(tools = O, thinking = R, noThinking = R, vision = R, toolsWithThinking = O),
+            caps(tools = O, thinking = R, noThinking = R, vision = R, toolsWithThinking = O, toolsWithVision = O),
             maxTokens = 2048, notes = "0.8B: emission unreliable, parsing must still work"),
         ModelExpectation("Qwen_Qwen3.5-2B-IQ4_XS.gguf",
-            caps(tools = R, thinking = R, noThinking = R, vision = R, toolsWithThinking = R),
+            caps(tools = R, thinking = R, noThinking = R, vision = R, toolsWithThinking = R, toolsWithVision = O),
             strictEmission = true, maxTokens = 2048),
         ModelExpectation("Qwen_Qwen3.5-4B-IQ4_XS.gguf",
-            caps(tools = R, thinking = R, noThinking = R, vision = R, toolsWithThinking = R),
+            caps(tools = R, thinking = R, noThinking = R, vision = R, toolsWithThinking = R, toolsWithVision = O),
             strictEmission = true, maxTokens = 2048),
 
         // ── Google: Gemma 4 QAT (vision, thinking, tools) ────────────────
         ModelExpectation("gemma-4-E2B_q4_0-it.gguf",
-            caps(tools = R, thinking = R, noThinking = R, vision = R, toolsWithThinking = R),
+            caps(tools = R, thinking = R, noThinking = R, vision = R, toolsWithThinking = R, toolsWithVision = O),
             notes = "post-tool reply goes blank if thinking isn't forced on — see ToolCallLoop"),
         ModelExpectation("gemma-4-E4B_q4_0-it.gguf",
-            caps(tools = R, thinking = R, noThinking = R, vision = R, toolsWithThinking = R),
+            caps(tools = R, thinking = R, noThinking = R, vision = R, toolsWithThinking = R, toolsWithVision = O),
             strictEmission = true),
 
         // ── Meta: Llama 3.2 ──────────────────────────────────────────────
@@ -107,11 +112,11 @@ object Expectations {
 
         // ── Mistral: Ministral 3 (vision) ────────────────────────────────
         ModelExpectation("Ministral-3-3B-Instruct-2512-Q4_K_M.gguf",
-            caps(tools = R, thinking = O, noThinking = R, vision = R),
+            caps(tools = R, thinking = O, noThinking = R, vision = R, toolsWithVision = O),
             notes = "template advertises thinking but the model never emits a <think> " +
                 "block, so the app shows a toggle that does nothing"),
         ModelExpectation("Ministral-3-3B-Reasoning-2512-Q4_K_M.gguf",
-            caps(tools = R, thinking = R, noThinking = O, vision = R, toolsWithThinking = R),
+            caps(tools = R, thinking = R, noThinking = O, vision = R, toolsWithThinking = R, toolsWithVision = O),
             maxTokens = 2048,
             notes = "reasoning-tuned: still emits <think> with thinking disabled"),
 

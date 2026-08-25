@@ -29,6 +29,7 @@ object Runner {
         AbortProbe,
         ContextOverflowProbe,
         ToolsWhileThinkingProbe,
+        ToolsWithVisionProbe,
     )
 
     fun probesFor(filter: Set<String>): List<Probe> =

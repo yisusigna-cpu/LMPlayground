@@ -1,5 +1,6 @@
 package com.druk.lmplayground.harness
 
+import com.druk.lmplayground.harness.probes.EmbeddingProbe
 import java.io.File
 
 /**
@@ -35,7 +36,13 @@ fun main(args: Array<String>) {
     // Catalog models with no expectation are reported, not skipped: that is
     // what stops a newly-added model from shipping unverified.
     val undeclared = catalog.filter { c ->
-        !c.deprecated && c.filename !in expectations && File(modelsDir, c.filename).isFile
+        !c.deprecated &&
+            c.filename !in expectations &&
+            // The embedding model is parsed out of the catalog like any other
+            // ModelInfo, but it cannot chat — it has its own probe below and
+            // must not also be reported as an unverified chat model.
+            c.filename != EmbeddingProbe.MODEL_FILENAME &&
+            File(modelsDir, c.filename).isFile
     }
 
     val selected = declared.filter { (c, _) -> opts.matchesModel(c.name, c.filename) }
@@ -66,6 +73,18 @@ fun main(args: Array<String>) {
     }
     reports += undeclared.map {
         ModelReport(it.name, it.filename, present = true, hasExpectation = false)
+    }
+
+    // The embedding model sits outside the chat catalog — it cannot generate,
+    // so it flows through its own probe rather than the per-model loop.
+    if (opts.matchesModel("EmbeddingGemma 300M", EmbeddingProbe.MODEL_FILENAME) &&
+        (opts.probes.isEmpty() || "embeddings" in opts.probes)
+    ) {
+        println("run       EmbeddingGemma 300M (document Q&A)")
+        val embedding = EmbeddingProbe.run(modelsDir, reportDir)
+        val bad = embedding.results.count { it.status == Status.FAIL || it.status == Status.ERROR }
+        println("          ${embedding.results.size} results, $bad failing")
+        reports += embedding
     }
 
     val meta = linkedMapOf(

@@ -29,7 +29,8 @@ import kotlinx.coroutines.runBlocking
  */
 object ToolProbe {
 
-    private val TOOL_MARKUP = Regex(
+    /** Shared with the vision variant so both classify emission identically. */
+    val TOOL_MARKUP = Regex(
         """<tool_call\b|</tool_call>|<\|tool_call|<\|tool▁call|<tool▁call|""" +
             """\[TOOL_CALLS]|<function[ =>]|<\|python_tag\|>|functools\[|""" +
             """<\|channel\|>commentary|""" +
