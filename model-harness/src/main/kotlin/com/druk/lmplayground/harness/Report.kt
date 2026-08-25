@@ -22,6 +22,9 @@ object Report {
         "Vision" to Cap.VISION,
         "MultiTurn" to Cap.MULTI_TURN,
         "Replay" to null,
+        "Cache" to null,
+        "Abort" to null,
+        "Overflow" to null,
         "Tool+Think" to Cap.TOOLS_WITH_THINKING,
     )
 
@@ -39,6 +42,9 @@ object Report {
             "Vision" -> r.results.filter { it.probe.startsWith("vision") }
             "Tools" -> r.results.filter { it.probe == "tools" }
             "Replay" -> r.results.filter { it.probe == "replay" }
+            "Cache" -> r.results.filter { it.probe == "preamble-cache" }
+            "Abort" -> r.results.filter { it.probe == "abort" }
+            "Overflow" -> r.results.filter { it.probe == "overflow" }
             "Tool+Think" -> r.results.filter { it.probe == "tools+think" }
             else -> r.results.filter { it.cap == cap }
         }

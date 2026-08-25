@@ -25,6 +25,9 @@ object Runner {
         VisionProbe,
         MultiTurnProbe,
         ReplayProbe,
+        PreambleCacheProbe,
+        AbortProbe,
+        ContextOverflowProbe,
         ToolsWhileThinkingProbe,
     )
 
