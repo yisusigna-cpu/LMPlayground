@@ -284,6 +284,8 @@ private:
     llama_model *model = nullptr;
     common_chat_templates_ptr chat_tmpls;
     mtmd_context *mtmd_ctx = nullptr;
+    // Path backing mtmd_ctx, so re-attaching the same projector is a no-op.
+    std::string mmproj_path;
 };
 
 #endif //LMPLAYGROUND_LLAMACPP_H

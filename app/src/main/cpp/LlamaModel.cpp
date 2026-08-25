@@ -103,6 +103,23 @@ void LlamaModel::loadMmprojModel(const std::string &mmprojPath) {
         return;
     }
 
+    // Idempotent. Assigning mtmd_ctx without freeing the previous context
+    // leaked it and aborted at teardown, and live generation sessions hold
+    // this pointer, so replacing it underneath them would dangle. Attaching
+    // the projector that is already attached is therefore a no-op; only an
+    // actual change of projector frees and reloads.
+    if (mtmd_ctx != nullptr) {
+        if (mmproj_path == mmprojPath) {
+            LOGi("loadMmprojModel: %s already attached, nothing to do", mmprojPath.c_str());
+            return;
+        }
+        LOGi("loadMmprojModel: replacing projector %s with %s",
+             mmproj_path.c_str(), mmprojPath.c_str());
+        mtmd_free(mtmd_ctx);
+        mtmd_ctx = nullptr;
+        mmproj_path.clear();
+    }
+
     mtmd_context_params params = mtmd_context_params_default();
     params.n_threads = std::max(1, std::min(kMaxVisionThreads, (int) sysconf(_SC_NPROCESSORS_ONLN) - 2));
     params.warmup = false;
@@ -153,6 +170,7 @@ void LlamaModel::loadMmprojModel(const std::string &mmprojPath) {
     if (mtmd_ctx == nullptr) {
         LOGe("loadMmprojModel: FAILED to load mmproj model '%s'", mmprojPath.c_str());
     } else {
+        mmproj_path = mmprojPath;
         LOGi("loadMmprojModel: OK, vision=%d", mtmd_support_vision(mtmd_ctx));
     }
 }
@@ -248,6 +266,7 @@ void LlamaModel::unloadModel() {
         mtmd_free(mtmd_ctx);
         mtmd_ctx = nullptr;
     }
+    mmproj_path.clear();
     chat_tmpls.reset();
     if (model != nullptr) {
         llama_model_free(model);
